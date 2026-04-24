@@ -36,7 +36,7 @@ Distraction is one of the most effective non-pharmacological interventions for p
 
 ### Our Project
 
-This project is a direct contribution to an ongoing thesis project by Thibaut Degreef and Stan Vanherle, focused on building a multimodal distraction device for children aged 3–6 during small medical procedures. The device combines a **weighted blanket** (proven to reduce anxiety [12]) with a **4×4 grid of haptic actuators** (servos and vibration actuators) placed on the child's belly, and a **heating foil** for thermal comfort. The thesis explores the scientific and engineering challenges of such a system.
+This project is a direct contribution to an ongoing thesis project by **Thibaut Degreef** and **Stan Vanherle**, focused on building a multimodal distraction device for children aged 3–6 during small medical procedures. The device combines a **weighted blanket** (proven to reduce anxiety [12]) with a **4×4 grid of haptic actuators** (servos and vibration actuators) placed on the child's belly, and a **heating foil** for thermal comfort. The thesis explores the scientific and engineering challenges of such a system.
 
 The contribution of this haptic course project is to **add an interactive visual and game layer** to the existing hardware: a game running on a touchscreen, controlled by **tilting the screen** (via an IMU sensor), whose events are directly **mapped to the haptic actuators** in the blanket. The child plays the game on the screen and simultaneously *feels* the gameplay through vibrations and servo movements on their belly — deepening the distraction effect through **multisensory engagement**.
 
