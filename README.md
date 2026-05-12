@@ -62,13 +62,35 @@ The following bill of materials covers all hardware required to reproduce this p
 | Passive Buzzer | 3 | Audio feedback via PWM | ~€5 |
 | Breadboard | 1–2 | Prototyping | ~€5 |
 | Jumper Wires (M-M, M-F, F-F) | 1 set | Connections between components | ~€5 |
-| Multiplexer TCA9548A or CD74HC4067 | 2 | Expand servo/actuator control channels | ~€6 (provided by lab) |
+| Multiplexer TCA9548A | 2 | Expand servo/actuator control channels | ~€6 (provided by lab) |
 | Vibrotactile Actuators + Drives (TacHammer / Drake Titan) | 16 | Vibration haptic feedback in blanket grid | Provided by lab/thesis |
 | Servos (for belly grid) | Up to 16 | 4×4 grid, already part of thesis hardware | Provided by thesis |
 | Touchscreen display | 1 | Visual game interface for child | ~€30–50 |
 | USB cables / power supply | As needed | Power for Arduinos | ~€5 |
 | **Total (excluding lab-provided items)** | | | **~€70–100** |
 
+### 📋 Bill of Materials (BOM)
+
+| Component | Quantity | Notes | Estimated Cost |
+| :--- | :--- | :--- | :--- |
+| **ESP-32 (Screen Side)** | 1 | Main microcontroller for game logic, screen, and IMU reading | ~€10–15 |
+| **ESP-32 (Blanket Side)** | 1 | Receiver brain for servos and haptic drivers | ~€10–15 |
+| **MPU6050 Module** | 1 | Accelerometer & Gyroscope for tilt-based screen input | ~€5 |
+| **SPI TFT Display** | 1 | Z400IT002 (or similar) visual game interface for child | ~€30–50 |
+| **Passive Buzzer** | 1–3 | Audio feedback via PWM | ~€3 |
+| **PCA9685 PWM Driver** | 1 | **CRITICAL:** 16-Channel driver for all 16 servos safely via I2C | ~€8–12 |
+| **TCA9548A Multiplexer** | 2 | Expands I2C to control 16 separate DRV2605L drivers | ~€6 |
+| **DRV2605L Motor Drivers** | 16 | Generates specific waveforms for the Drake actuators | ~€60–80 *(Check if lab provides)* |
+| **Drake Titan Actuators** | 16 | Vibrotactile actuators for haptic feedback in blanket grid | Provided by lab |
+| **Servos** | 16 | Controls the 4×4 physical belly grid (already part of thesis hardware) | Provided by thesis |
+| **5V Power Supply** | 1 | **CRITICAL:** High-Current (10A-20A) dedicated power for all servos & haptics | ~€20–30 |
+| **DC Power Adapter** | 1 | Jack to Terminal Adapter to connect wall power to PCA9685/breadboard | ~€2 |
+| **Logic Level Shifter** | 1 | *(Optional)* Boosts 3.3V ESP32 I2C signal to 5V for long wires | ~€2 |
+| **Breadboard** | 2–3 | For rapid prototyping before permanent soldering | ~€6 |
+| **Jumper Wires** | 1 set | Mix of M-M, M-F, F-F for connections between components | ~€8 |
+| **USB Cables** | 2 | Power/Data for ESP32s and computer programming | ~€5 |
+| --- | --- | --- | --- |
+| **Total** | | *(Excluding lab/thesis-provided items)* | **~€165–230** |
 > **Note:** The servo grid, vibration actuators, multiplexers, and weighted blanket enclosure are part of the thesis hardware and are provided by the lab (TA: Marlon Rodriguez). The course project contribution focuses on the game interface and the IMU-to-haptic mapping layer.
 
 ---
