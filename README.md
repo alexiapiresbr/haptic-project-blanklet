@@ -62,7 +62,7 @@ The following bill of materials covers all hardware required to reproduce this p
 | Passive Buzzer | 3 | Audio feedback via PWM | ~€5 |
 | Breadboard | 1–2 | Prototyping | ~€5 |
 | Jumper Wires (M-M, M-F, F-F) | 1 set | Connections between components | ~€5 |
-| Multiplexer (e.g., TCA9548A or CD74HC4067) | 2 | Expand servo/actuator control channels | ~€6 (provided by lab) |
+| Multiplexer TCA9548A or CD74HC4067 | 2 | Expand servo/actuator control channels | ~€6 (provided by lab) |
 | Vibrotactile Actuators + Drives (TacHammer / Drake Titan) | 16 | Vibration haptic feedback in blanket grid | Provided by lab/thesis |
 | Servos (for belly grid) | Up to 16 | 4×4 grid, already part of thesis hardware | Provided by thesis |
 | Touchscreen display | 1 | Visual game interface for child | ~€30–50 |
