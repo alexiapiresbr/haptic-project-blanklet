@@ -83,15 +83,146 @@ The following bill of materials covers all hardware required to reproduce this p
 | **DRV2605L Motor Drivers** | 16 | Generates specific waveforms for the Drake actuators | ~€60–80 *(Check if lab provides)* |
 | **Drake Titan Actuators** | 16 | Vibrotactile actuators for haptic feedback in blanket grid | Provided by lab |
 | **Servos** | 16 | Controls the 4×4 physical belly grid (already part of thesis hardware) | Provided by thesis |
-| **5V Power Supply** | 1 | **CRITICAL:** High-Current (10A-20A) dedicated power for all servos & haptics | ~€20–30 |
+| **5V Power Supply** | 1 | High-Current (10A-20A) dedicated power for all servos & haptics | ~€20–30 |
 | **DC Power Adapter** | 1 | Jack to Terminal Adapter to connect wall power to PCA9685/breadboard | ~€2 |
-| **Logic Level Shifter** | 1 | *(Optional)* Boosts 3.3V ESP32 I2C signal to 5V for long wires | ~€2 |
 | **Breadboard** | 2–3 | For rapid prototyping before permanent soldering | ~€6 |
 | **Jumper Wires** | 1 set | Mix of M-M, M-F, F-F for connections between components | ~€8 |
 | **USB Cables** | 2 | Power/Data for ESP32s and computer programming | ~€5 |
-| --- | --- | --- | --- |
 | **Total** | | *(Excluding lab/thesis-provided items)* | **~€165–230** |
 > **Note:** The servo grid, vibration actuators, multiplexers, and weighted blanket enclosure are part of the thesis hardware and are provided by the lab (TA: Marlon Rodriguez). The course project contribution focuses on the game interface and the IMU-to-haptic mapping layer.
+
+### 3.1.4 System Components
+
+#### 3.1.4.1 Controllers
+The system is built around the **ESP32-WROOM NodeMCU Development Board**, a versatile microcontroller platform featuring integrated Wi-Fi and Bluetooth connectivity. This board is based on a dual-core processor architecture, enabling efficient multitasking and real-time control.
+
+**Key features include:**
+* Dual-core processor for high-performance embedded applications 
+* Integrated Wi-Fi and Bluetooth for wireless communication 
+* Ultra-low power consumption 
+* 38-pin breakout with pre-soldered headers for ease of integration 
+
+The ESP32 serves as the central control unit, handling communication, sensor data acquisition, and actuator control.
+
+#### 3.1.4.2 Driver Modules
+**Servo Driver**
+The system uses the **Grove 16-Channel PWM Servo Driver (PCA9685)** to control multiple servo motors efficiently.
+
+**Key characteristics:**
+* Based on the NXP PCA9685 16-channel, 12-bit PWM controller 
+* I2C interface with Fast-mode Plus support (up to 1 MHz) 
+* Capability to control up to 16 servos simultaneously 
+* Low standby current consumption 
+* Integrated noise filtering on SDA and SCL lines 
+
+This driver offloads PWM generation from the ESP32, improving timing accuracy and reducing processing overhead.
+
+**Vibration Actuator Control**
+To manage the complex waveforms required by the multiple vibration actuators, the system relies on dedicated haptic motor drivers routed through an I2C multiplexer. 
+
+The **Adafruit STEMMA QT / Qwiic PCA9548A I2C Multiplexer** is used to manage communication.
+**Key features:**
+* 8-channel I2C multiplexing capability 
+* JST SH 1 mm connectors for easy integration 
+* Built-in 3.3 V regulator (500 mA) 
+* Level shifting support for compatibility with 5 V systems 
+* Compact design with mounting holes 
+
+This module acts as a signal router, enabling multiple identical haptic motor drivers (which share the same default I2C address) to coexist on the same bus without address conflicts. These dedicated drivers then generate the specific AC waveforms required to physically drive the Titan TacHammer voice-coil actuators.
+
+#### 3.1.4.3 Actuators
+**Vibrotactile Actuators**
+The system incorporates **Titan Haptics TacHammer** actuators. To enable a wide range of haptic feedback profiles, all available variants are used within the system, namely:
+* Drake LF 
+* Drake MF 
+* Drake HF 
+* Drake LFi 
+
+Each variant operates over a different effective frequency range and peak output, allowing the system to generate diverse tactile sensations, from low-frequency vibrations to high-intensity feedback.
+
+**Servo Motors**
+The **MG90S micro servo motor** is used for mechanical actuation.
+
+**Key specifications:**
+* Rotation range: approximately 180° 
+* Metal gear construction for durability 
+* Compact size with relatively high torque 
+
+These servos are suitable for precise positioning tasks within constrained spaces.
+
+#### 3.1.4.4 Switching Components
+**MOSFET**
+The selected switching component is the **IRLZ44N MOSFET**, used for driving high-current loads such as heating elements or actuators.
+
+**Key specifications:**
+* Drain-source voltage: 55 V 
+* Continuous drain current: 47 A 
+* Gate threshold voltage: compatible with logic-level control (16 V max gate) 
+
+This MOSFET allows efficient and reliable switching controlled directly by the ESP32.
+
+#### 3.1.4.5 Sensors
+**Temperature Sensors**
+The system uses **TRU COMPONENTS TTS2A103F3963RY thermistors**.
+
+**Key characteristics:**
+* Temperature range: -40 °C to +100 °C 
+* Resistance: 10 kΩ at 25 °C 
+* Temperature coefficient: 3960 K 
+* Accuracy: ±1% 
+* Radial design with insulated leads 
+
+These sensors provide accurate temperature monitoring for system safety and control.
+
+#### 3.1.4.6 Heating Element
+The heating component is a **Thermo TECH polyester heating film**.
+
+**Key specifications:**
+* Supply voltage: 24 V (AC/DC) 
+* Power rating: 30 W 
+* Dimensions: 705 mm × 47 mm 
+* Maximum surface temperature: 60 °C 
+* Protection class: IPX4 
+* Self-adhesive backing for easy installation 
+
+This flexible heating element ensures uniform heat distribution across the target surface.
+
+#### 3.1.4.7 Display Module
+A **4.0-inch TFT LCD display with ILI9488 controller** is used for user interaction.
+
+**Key features:**
+* Resolution: 480 × 320 pixels 
+* 65K color support 
+* SPI communication interface 
+* Integrated touch functionality 
+* SD card slot for data expansion 
+
+This display provides a clear and interactive interface for monitoring and touch control.
+
+#### 3.1.4.8 Power Supply
+Two power supplies are used to meet different system requirements:
+
+**Primary Power Supply**
+* Input: 100–240 V AC, 50–60 Hz 
+* Output: 24 V DC, 2.5 A (60 W) 
+* Used for high-power components such as the heating element 
+
+**Secondary Power Supply**
+* Input: 100–240 V AC, 50–60 Hz 
+* Output: 5 V DC, 1.0 A (5 W) 
+* Used for logic-level components and control electronics 
+
+#### 3.1.4.9 Passive and Supporting Components
+* **Resistors:** 10 kΩ resistors are used for signal conditioning and voltage division (e.g., with thermistors). 
+* **Cabling:** STEMMA QT cables (300 mm) are used for modular and reliable I2C connections. 
+
+#### 3.1.4.10 Structural Material (Foam)
+The system incorporates foam material with the following indicative properties:
+* Density: approximately 330 kg/m³ 
+* Good elasticity and resilience (>40%) 
+* Suitable mechanical strength and deformation resistance 
+
+This material is used for structural support and user interaction comfort.
 
 ---
 
