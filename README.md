@@ -113,7 +113,10 @@ Every component was selected to balance low-latency responsiveness, child-friend
 - **Wireless Protocol (ESP-NOW)**: We utilized ESP-NOW rather than standard 802.11 Wi-Fi or Bluetooth. *Reasoning:* ESP-NOW is a connectionless protocol. By omitting heavy Wi-Fi handshake constraints and router dependencies, communication overhead remains under 2 milliseconds. This ensures that the tactile sensation felt on the patient's belly is perfectly synchronized with the visual frames displayed on the screen.
 
 ### Step 2 — Hardware Setup & Wiring Pinouts
-The Master HMI unit is securely soldered onto permanent protoboards to ensure mechanical safety and connection integrity during motion-heavy gameplay.
+
+Because the haptic blanket is a pre-existing thesis hardware platform, the physical construction for this course project focuses entirely on building the handheld Human-Machine Interface (HMI) Master node. 
+
+The ESP32, display, gyroscope, and buzzer are securely soldered onto a permanent protoboard to ensure mechanical safety and connection integrity during motion-heavy gameplay. Below is the pinout mapping for connecting the peripherals to the ESP32 microcontroller:
 
 | Peripheral Pin | ESP32 Target Pin | Connection Context |
 | :--- | :--- | :--- |
@@ -123,6 +126,7 @@ The Master HMI unit is securely soldered onto permanent protoboards to ensure me
 | **TFT VCC / GND** | 5V (Vin) / GND | High-brightness backlighting power rail |
 | **TFT CS / RESET / DC** | GPIO 15 / GPIO 4 / GPIO 2 | SPI control and routing selections |
 | **TFT SDI (MOSI) / SCK** | GPIO 23 / GPIO 18 | Hardware VSPI lines |
+
 
 ### Step 3 — IMU Calibration & Tilt-Based Game Input
 
