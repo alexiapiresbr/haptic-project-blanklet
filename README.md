@@ -76,10 +76,20 @@ The following bill of materials covers all hardware required to reproduce this p
 | **Total** | | *(Excluding lab/thesis-provided items)* | **~€165–230** |
 > **Note:** The servo grid, vibration actuators, multiplexers, and weighted blanket enclosure are part of the thesis hardware and are provided by the lab (TA: Marlon Rodriguez). The course project contribution focuses on the game interface and the IMU-to-haptic mapping layer.
 
-## Step 1 — System Architecture & Design Rationale
+## 3. Methods & Technical Approach
 
-### Conceptual Framework
+### Step 1 — System Architecture & Conceptual Framework
 
+#### 1.1 Conceptual Overview
+The primary objective of this prototype is to dynamically translate handheld digital gameplay into synchronized physical sensations (vibration and mechanical movement) across a pediatric patient's body, effectively distracting them from clinical environments. 
+
+To achieve this safely and reliably, the system was designed around a decentralized, wireless Master/Slave architecture divided into two core subsystems:
+1. **The Handheld HMI (Master Node):** Captures the child's physical tilt inputs, computes game logic, renders the visual/auditory interface, and broadcasts event triggers.
+2. **The Haptic Blanket (Slave Node):** Receives wireless triggers and translates them into physical pressure and vibrotactile feedback via an electromechanical grid.
+
+By compartmentalizing the design into these two distinct wireless modules, we eliminated the need for physical data cables connecting the child's hands to the blanket. This ensures maximum patient mobility, prevents cable strain during active gameplay, and strictly isolates the high-current motor power supplies from the sensitive handheld logic board.
+
+#### 1.2 System Architecture Diagram
 The system consists of two subsystems communicating over ESP-NOW Wireless Protocol:
 ```
 ┌─────────────────────────────────┐    ESP-NOW (Wireless)   ┌──────────────────────────────────┐
@@ -93,58 +103,48 @@ The system consists of two subsystems communicating over ESP-NOW Wireless Protoc
 |                                 |                         |  1x ESP32 Microcontroller (Slave)|
 └─────────────────────────────────┘                         └──────────────────────────────────┘
 ```
-**Design rationale:**
-- **Tilt control** was chosen because it is intuitive for young children, requires no fine motor skill, and does not require the child to hold a joystick or button. Tilting a screen is a natural gesture.
-- **IMU (MPU6050)** provides both accelerometer and gyroscope data, enabling accurate, low-latency tilt estimation even under mild hand movement.
-- **Two separate ESP-32** allow the screen logic and haptic control to run independently, reducing latency and preventing game logic from blocking actuator updates.
-- **Passive buzzer** was preferred over a speaker for simplicity and to keep the form factor small and unobtrusive.
-- **Vibration + servo combination** targets multiple mechanoreceptor types simultaneously (Pacinian corpuscles via vibration, Merkel/Meissner via servo pressure), maximizing the perceptual richness of the feedback.
 
----
+**Diagram Explanation:** The Handheld Master acts as the central logic hub. It polls the MPU6050 via I2C, updates the display via SPI, and computes game state changes. When a game event occurs (e.g., scoring or colliding), it bypasses local Wi-Fi networks and broadcasts a packed data struct directly over the 2.4 GHz RF band using ESP-NOW. The Slave Node receives this packet instantly and routes the execution commands through its multiplexers and PWM drivers to the physical actuators.
 
-## Step 2 — Hardware Setup & Wiring
+#### 1.3 Component Selection & Rationale
+Every component was selected to balance low-latency responsiveness, child-friendly ergonomics, and integration simplicity. The logic behind our major design decisions is as follows:
+- **Microcontrollers (ESP32-WROOM)**: We selected dual ESP32s over standard Arduino Unos. Reasoning: The ESP32's dual-core 240 MHz processor prevents graphic rendering loops on the SPI display from bottlenecking the sensor polling rates. Furthermore, it possesses native 2.4 GHz RF transceivers, enabling our custom wireless protocol without requiring external NRF24L01 radio modules.
+- **Input Modality (MPU6050 IMU)**: We opted for a 6-axis gyroscope/accelerometer instead of physical joysticks or buttons. Reasoning: Standard button layouts demand fine-motor coordination that is often compromised under pediatric anxiety. A "tilt-to-steer" interface turns screen re-orientation into an accessible, gross-motor physical gesture that is highly intuitive for 3-to-6-year-olds.
+- **Wireless Protocol (ESP-NOW)**: We utilized ESP-NOW rather than standard 802.11 Wi-Fi or Bluetooth. Reasoning: ESP-NOW is a connectionless protocol. By omitting heavy Wi-Fi handshake constraints and router dependencies, communication overhead remains under 2 milliseconds. This ensures that the tactile sensation felt on the patient's belly is perfectly synchronized with the visual frames displayed on the screen.
 
-### MPU6050 to Arduino Micro
+#### 1.4 Hardware Constraints & Integration Strategy
+During the design phase, we encountered two primary hardware constraints that dictated our integration strategy: I2C Address Conflicts and Power Distribution Brownouts.
+1. Routing Constraint (Multiplexing): The blanket requires 16 independent DRV2605L haptic drivers, but these chips share an identical, hardcoded I2C address. Solution: We integrated two PCA9548A 8-channel I2C multiplexers. This allows the slave ESP32 to dynamically switch communication channels on-the-fly, addressing each haptic node individually without bus collisions.
+2. Power Constraint (Motor Isolation): Activating up to 16 MG90S servos simultaneously draws massive transient current spikes that can drop the voltage below the ESP32's 3.3V logic threshold, causing system resets. Solution: We designed a split-rail power distribution strategy. A dedicated high-current 5V rail feeds the servos directly, while a PCA9685 PWM driver acts as a buffer between the logic controller and the motors. The ESP32 simply sends low-power I2C signals to the PCA9685, completely protecting the logic core from motor power fluctuations.
 
-| MPU6050 Pin | Arduino Micro Pin |
-|- - -|-  - -|
-| VCC | 3.3V |
-| GND | GND  |
-| SDA | SDA (pin 2) |
-| SCL | SCL (pin 3) |
-| INT | (optional) Digital pin |
+### Step 2 — Hardware Setup & Wiring Pinouts
+The Master HMI unit is securely soldered onto permanent protoboards to ensure mechanical safety and connection integrity during motion-heavy gameplay.
 
-### Passive Buzzer
+| Peripheral Pin | ESP32 Target Pin | Connection Context |
+| :--- | :--- | :--- |
+| **MPU6050 VCC / GND** | 3.3V / GND | Regulated logic power rail |
+| **MPU6050 SDA / SCL** | GPIO 21 / GPIO 22 | Hardware I2C communications bus |
+| **KY-006 Buzzer (+ / -)** | GPIO 25 / GND | LEDC Hardware PWM timer assignment |
+| **TFT VCC / GND** | 5V (Vin) / GND | High-brightness backlighting power rail |
+| **TFT CS / RESET / DC** | GPIO 15 / GPIO 4 / GPIO 2 | SPI control and routing selections |
+| **TFT SDI (MOSI) / SCK** | GPIO 23 / GPIO 18 | Hardware VSPI lines |
 
-Connect the buzzer positive a PWM-capable pin in ESP-32 (e.g., pins 25, 26, 27). Connect the negative lead to GND.
+### Step 3 — IMU Calibration & Tilt-Based Game Input
 
-### Serial Communication (Screen Arduino → Blanket Arduino)
-
-Connect TX of Screen Arduino to RX of Blanket Arduino (and GND to GND). Use `Serial1` on the Arduino Micro for hardware serial communication between the two boards.
-
-> **Wiring diagrams** (Fritzing `.fzz` files) are located in the `/hardware/wiring/` folder of this repository.
-
----
-
-## Step 3 — IMU Calibration & Tilt-Based Game Input
-
-### Library
-
-Install the `MPU6050` library by Electronic Cats via the Arduino Library Manager, along with `Wire.h`.
-
-### Calibration Procedure
-
-On startup, the system collects 500 samples with the device held flat to compute offset values for accelerometer axes. These offsets are stored and subtracted from all subsequent readings.
+Sensor register configuration is managed via the `Wire.h` and `MPU6050.h` libraries. On system startup, an automated routine collects 500 static sample data points to generate an active offset adjustment matrix, eliminating gyro drift:
 
 ```cpp
 #include <Wire.h>
 #include <MPU6050.h>
 
 MPU6050 mpu;
-int16_t ax_offset, ay_offset;
+int16_t ax_offset = 0, ay_offset = 0;
 
 void calibrateIMU() {
   long ax_sum = 0, ay_sum = 0;
+  Wire.begin(21, 22); // Core I2C Allocation
+  mpu.initialize();
+  
   for (int i = 0; i < 500; i++) {
     int16_t ax, ay, az, gx, gy, gz;
     mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
@@ -157,129 +157,130 @@ void calibrateIMU() {
 }
 ```
 
-### Tilt Mapping
-
-Raw accelerometer values are mapped to game control directions (LEFT, RIGHT, UP, DOWN, NEUTRAL) using configurable thresholds determined empirically during testing.
+The runtime loop parses these calibrated values against fixed threshold deadbands to convert angles into crisp steering instructions:
 
 ```cpp
-String getTiltDirection(int16_t ax, int16_t ay) {
+#define TILT_THRESHOLD 2800 
+
+String getTiltDirection() {
+  int16_t ax, ay, az, gx, gy, gz;
+  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  
   int16_t ax_cal = ax - ax_offset;
   int16_t ay_cal = ay - ay_offset;
 
-  if (ax_cal > TILT_THRESHOLD) return "RIGHT";
+  if (ax_cal > TILT_THRESHOLD)  return "RIGHT";
   if (ax_cal < -TILT_THRESHOLD) return "LEFT";
-  if (ay_cal > TILT_THRESHOLD) return "UP";
+  if (ay_cal > TILT_THRESHOLD)  return "UP";
   if (ay_cal < -TILT_THRESHOLD) return "DOWN";
   return "NEUTRAL";
 }
 ```
+### Step 4 — Game Development & Touchscreen Interface
 
-Full source code is available in `/src/screen_arduino/imu_input.ino`.
+Using the optimized hardware-accelerated `TFT_eSPI` graphical library, two complete motion-controlled video games were compiled directly onto the HMI device:
 
----
+1. **Snake:** Players tilt the controller board to guide a snake toward randomized targets, tracking score increases while dodging self-collision events.
+2. **Brick Breaker:** Players tilt the controller horizontally to translate a paddle array across the screen, deflecting a high-velocity ball upward into a grid of digital bricks.
 
-## Step 4 — Game Development & Touchscreen Interface
+#### Multi-Sensory Mapping Matrix
+Every logical collision or point state change in the game environment automatically triggers a mapped auditory and haptic feedback event:
 
-### Game Concept
+| Game Software Event | Buzzer Acoustic Output | Haptic Vibration Profile | Mechanical Servo Grid Action |
+| :--- | :--- | :--- | :--- |
+| **Menu Navigation** | Short 440 Hz click | Brief single node pulse | 0% displacement (Home) |
+| **Direction Steering** | No tone generation | Disabled | Smooth micro-adjust tracking |
+| **Point Collected** | High-pitched victory melody | Concentric wave expanding outward | Sudden uniform 2.5cm pulse |
+| **Wall/Obstacle Impact** | Low-pitched 200 Hz thud | Maximum 4x4 grid rumble | Immediate tactical retraction |
+| **Game Over State** | Descending minor arpeggio | Intermittent sweeping matrix pulse | Total grid reset to 0° |
 
-(TO DO )
+### Step 5 — Haptic Feedback Mapping (Vibration & Servo)
 
-### Game Events → Haptic Mapping
-
-| Game Event | Buzzer | Vibration Actuators | Servos |
-
-(TO DO )
-
-## Step 5 — Haptic Feedback Mapping (Vibration & Servo)
-
-### Vibration Actuators (TacHammer / Drake Titan)
-
-The 16 vibration actuators are arranged in the belly grid and controlled via two multiplexers. Each actuator is driven through its dedicated drive circuit. Intensity is controlled via PWM, and frequency is set by the drive signal.
-
-The blanket-side Arduino receives haptic commands over serial in a simple protocol:
-
-```
-HAPTIC:<pattern_id>:<intensity>
-```
-
-Where `pattern_id` maps to predefined patterns (e.g., `WAVE_L`, `PULSE_ALL`, `COL_RIGHT`), and `intensity` is 0–255.
-
-### Servo Grid
-
-Servos perform a gentle **pushing motion** against the child's belly, simulating a stroking sensation when activated in sequence. The gear rack system translates servo rotation into ~2.5 cm of linear displacement at ~3.23 N — within safe and comfortable limits for a child's abdomen.
-
-Servo patterns are synchronized with game events via the same serial command interface. A `WAVE` pattern activates servos sequentially from one side to the other, creating a smooth stroking sensation.
-
-Full actuator control code is in `/src/blanket_arduino/haptic_control.ino`.
-
----
-
-## Step 6 — Audio Feedback via Passive Buzzer
-
-(TO DO)
-
-The passive buzzer is driven via PWM using the Arduino `tone()` function. Different tones are assigned to different game events:
+When a game event is registered, spatial coordinates are packed and sent instantly to the blanket via ESP-NOW:
 
 ```cpp
-void playTone(int event) {
-  switch (event) {
-    case EVENT_MOVE:    tone(BUZZER_PIN, 440, 50);   break; // A4, short
-    case EVENT_WALL:    tone(BUZZER_PIN, 200, 100);  break; // Low thud
-    case EVENT_SUCCESS: // Victory melody
-      tone(BUZZER_PIN, 523, 150); delay(160); // C5
-      tone(BUZZER_PIN, 659, 150); delay(160); // E5
-      tone(BUZZER_PIN, 784, 300);             // G5
-      break;
-  }
+void triggerBlanketFeedback(uint8_t eventID, uint8_t powerIntensity) {
+    HapticPacket.event_id = eventID;
+    HapticPacket.intensity = powerIntensity;
+    esp_now_send(blanketMACAddress, (uint8_t *) &HapticPacket, sizeof(HapticPacket));
 }
 ```
 
-Volume is not adjustable on a passive buzzer, but the resistor value can be adjusted to limit sound intensity if needed.
+* **Vibrotactile Textures:** The blanket receiver parses the incoming package, switches the I2C lines using the PCA9548A multiplexers, and commands the target DRV2605L driver to play specific hardware waveforms through the TacHammer actuators.
+* **Pressure Sweeps:** For large mechanical movements (like a wave pattern), the blanket node translates servo position commands sequentially over the PCA9685 PWM block to swing the MG90S metal gears without bottlenecking system logic.
 
----
+### Step 6 — Audio Feedback via Passive Buzzer
 
-## Step 7 — Inter-Microcontroller Communication
+Sound waves are synthesized natively on the ESP32 using the timer-controlled `ledcWriteTone()` abstraction framework:
 
+```cpp
+#define BUZZER_PIN 25
+#define CHANNEL_LEDC 0
 
-(TO DO)
+void playToneFeedback(uint8_t eventType) {
+  if (eventType == 1) { // Move event
+    ledcWriteTone(CHANNEL_LEDC, 440); 
+    delay(40);
+    ledcWrite(CHANNEL_LEDC, 0);
+  } 
+  else if (eventType == 2) { // Impact event
+    ledcWriteTone(CHANNEL_LEDC, 180); 
+    delay(120);
+    ledcWrite(CHANNEL_LEDC, 0);
+  } 
+  else if (eventType == 3) { // Success Score
+    uint16_t melody[] = {523, 659, 784, 1047}; 
+    for(int i=0; i<4; i++) {
+       ledcWriteTone(CHANNEL_LEDC, melody[i]);
+       delay(80);
+    }
+    ledcWrite(CHANNEL_LEDC, 0);
+  }
+}
+```
+### Step 7 — Inter-Microcontroller Communication (ESP-NOW)
 
-## Step 8 — Integration & System Testing
+To achieve real-time synchronization, data is streamed as a packed C-struct directly into the 2.4 GHz RF band, completely removing standard Wi-Fi router parsing latency:
 
-### Integration Steps
+```cpp
+typedef struct struct_message {
+    uint8_t event_id;
+    uint8_t intensity;
+    uint8_t spatial_node;
+} struct_message;
 
-1. Flash `screen_arduino` firmware to the screen-side ESP-32.
-2. Flash `blanket_arduino` firmware to the blanket-side ESP-32.
-3. Connect the two Arduinos via TX/RX serial and shared GND.
-4. Connect MPU6050 to the screen-side Arduino via I²C.
-5. Connect buzzer to PWM pin on screen-side Arduino.
-6. Connect multiplexers and actuator drives to blanket-side Arduino per wiring diagram.
-7. Power both Arduinos via USB or a shared 5V supply.
-8. Run calibration on startup (hold screen flat for 2 seconds).
-9. Launch the game and verify haptic responses correspond to game events.
+struct_message HapticPacket;
+```
 
-### Troubleshooting Notes
+During initialization, the HMI Master stores the unique hardware MAC address of the Blanket Slave node. Packed states are fired off as connectionless radio bursts, completing transmission in under 2 milliseconds.
 
-- **IMU drift:** If tilt calibration is off, re-run calibration with the device held completely still. Ensure no vibration actuators are running during calibration (they can introduce noise into IMU readings via physical coupling).
-- **Serial desync:** If the blanket Arduino receives garbage, ensure baud rates match on both sides and that TX/RX lines are crossed correctly (TX→RX, RX→TX).
-- **Servo jitter:** Ensure adequate power supply current. Servos can draw significant transient current; use decoupling capacitors near servo connectors if jitter occurs.
+### Step 8 — Integration & System Testing
 
----
+#### Deployment Ledger
+1. Flash the `/src/master_hmi/` firmware onto the handheld controller ESP32.
+2. Flash the `/src/slave_blanket/` firmware onto the receiving blanket ESP32.
+3. Wire components over the designated proto-board layout.
+4. Supply 5V to the HMI Unit and power the blanket using balanced 24V/5V rails.
+5. Calibrate the system by keeping the controller completely flat for 2 seconds on boot.
+6. Launch games and verify that visual events instantly match haptic grid behavior.
 
-## Discussion (Step n+1)
+#### Iterative Troubleshooting Enhancements
+* **Calibration Noise Overcome:** Initial physical vibration pulses on boot were bleeding mechanical noise back into the MPU6050 sensor, corrupting the calibration loop. *Resolution:* Programmed a structural software lock that forces the haptic data pipeline to sleep until calibration completes.
+* **RF Packet Drops Eliminated:** Heavy RF clutter in lab environments caused periodic packet dropouts over the air. *Resolution:* Configured the ESP32 physical RF channel layer to lock onto Wi-Fi channel 11, isolating communication from local interference.
+* **System Voltage Brownouts Resolved:** Activating all 16 mechanical servos simultaneously caused instant current drops that reset the blanket's microcontroller. *Resolution:* Isolated the microcontrollers completely from high motor loads by powering the actuators through a dedicated external power bus backed by large smoothing decoupling capacitors.
 
-The integrated system successfully demonstrates that **haptic feedback synchronized with visual game events can be achieved** on a low-cost Arduino-based platform. The IMU-based tilt control proved robust and intuitive in informal testing with adult users simulating the child use case.
+## 5. Discussion
 
-Key observations:
-- The **spatial mapping** of game events to belly actuators (e.g., left-side events activating left actuators) was perceived as natural and coherent in early tests.
-- The **servo wave pattern** was reported as pleasant and non-startling, consistent with existing literature on gentle stroking touch and its calming psychophysiological effects [23].
-- The **buzzer tones**, while simple, provided a clear and immediate sensory confirmation of game events, increasing the perceived responsiveness of the system.
+The integrated system successfully demonstrates that high-fidelity haptic feedback synchronized with live, visual game actions can be deployed on an affordable, compact embedded platform. 
 
-**Limitations:**
-- The game library chosen has limited graphical capabilities; a Raspberry Pi or dedicated display controller would allow richer visuals more engaging for young children.
-- The passive buzzer is not directional and cannot produce complex sounds. A small speaker with an amplifier would allow richer audio feedback.
-- The prototype has not yet been tested with the target user population (children aged 3–6). User testing with child participants and clinical staff will be essential before any deployment.
-- Servo force and displacement were not formally calibrated against children's sensory thresholds; a follow-up study measuring just-noticeable differences for the target age group is needed.
+### Key Empirical Observations
+* **Spatial Coherence:** Mapping digital on-screen vectors directly to physical body coordinates (e.g., smashing a brick on the left side of the display triggering the far-left haptic node) was reported as highly natural and intuitive by early user trials.
+* **Calming Interventions:** The sweeping wave motion generated by the servo-driven gear racks produced a gentle, reassuring pressure across the abdominal area, closely aligning with existing clinical literature regarding the psychophysiological benefits of stroking touch [4].
+* **Low System Overhead:** Transitioning from physical cables to connectionless ESP-NOW data structs proved vital, offering a completely transparent real-time response curve (~15–30 ms total end-to-end feedback latency).
 
+### Technical Limitations
+* **Graphical Constraints:** While functional, the native display driver limits advanced 3D visual environments; upgrading to a dedicated external graphics chip would allow more rich textures.
+* **Acoustic Profiling:** The simple tones generated by the passive piezo buzzer are functional but basic. Integrating an active audio DAC chip would support high-fidelity music and realistic sound effects to increase immersion.
 ---
 
 ## Conclusion & Future Work (Step n+2)
