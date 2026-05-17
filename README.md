@@ -38,15 +38,15 @@ Distraction is one of the most effective non-pharmacological interventions for p
 
 This project is a direct contribution to an ongoing thesis project by **Thibaut Degreef** and **Stan Vanherle**, focused on building a multimodal distraction device for children aged 3–6 during small medical procedures. The device combines a **weighted blanket** (proven to reduce anxiety [12]) with a **4×4 grid of haptic actuators** (servos and vibration actuators) placed on the child's belly, and a **heating foil** for thermal comfort. The thesis explores the scientific and engineering challenges of such a system.
 
-The contribution of this haptic course project is to **add an interactive visual and game layer** to the existing hardware: a game running on a touchscreen, controlled by **tilting the screen** (via an IMU sensor), whose events are directly **mapped to the haptic actuators** in the blanket. The child plays the game on the screen and simultaneously *feels* the gameplay through vibrations and servo movements on their belly — deepening the distraction effect through **multisensory engagement**.
+The contribution of this haptic course project is to **add an interactive visual and game layer** to the existing hardware: a game running on a touchscreen, controlled by **tilting the screen** (via an IMU sensor), whose events are directly **mapped to the haptic actuators** in the blanket. The child plays the game on the screen and simultaneously *feels* the gameplay through vibrations and servo movements on their belly, deepening the distraction effect through **multisensory engagement**.
 
 A **passive buzzer** integrated into the ESP-32 also provides synchronized audio feedback (tones for events such as successes or alerts), further increasing engagement.
 
 ### Why Haptic Technology?
 
-The sense of touch is mediated by a rich array of mechanoreceptors in the skin: Meissner's corpuscles (light touch), Merkel's discs (pressure), Ruffini endings (stretch), and Pacinian corpuscles (vibration) [10]. These receptors respond to distinct stimulus types and can be selectively stimulated using actuators operating at appropriate frequencies and contact profiles. Combining vibrotactile and pressure stimuli on the abdomen — a region with moderate receptor density and relatively low two-point discrimination thresholds — creates a novel, engaging sensory experience that redirects the child's attention away from the medical procedure.
+The sense of touch is mediated by a rich array of mechanoreceptors in the skin: Meissner's corpuscles (light touch), Merkel's discs (pressure), Ruffini endings (stretch), and Pacinian corpuscles (vibration) [10]. These receptors respond to distinct stimulus types and can be selectively stimulated using actuators operating at appropriate frequencies and contact profiles. Combining vibrotactile and pressure stimuli on the abdomen, a region with moderate receptor density and relatively low two-point discrimination thresholds, creates a novel, engaging sensory experience that redirects the child's attention away from the medical procedure.
 
-Existing literature on haptic distraction in pediatric medical contexts is sparse [current gap in the field], making this project scientifically novel in addition to being technically challenging.
+Existing literature on haptic distraction in pediatric medical contexts is sparse, making this project scientifically novel in addition to being technically challenging.
 
 ---
 
@@ -54,38 +54,23 @@ Existing literature on haptic distraction in pediatric medical contexts is spars
 
 The following bill of materials covers all hardware required to reproduce this prototype. Items shared with the thesis hardware platform (and already provided by the lab) are noted accordingly.
 
-| Component | Quantity | Notes | Estimated Cost |
-|---|---|---|---|
-| ESP-32 (screen side) | 1 | Main microcontroller for game logic and IMU reading | ~€20 |
-| ESP-32 (blanket side) | 1 | Controls servos and vibration actuators | ~€20 |
-| MPU6050 Accelerometer & Gyroscope | 1 | Tilt-based screen input | ~€5 |
-| Passive Buzzer | 3 | Audio feedback via PWM | ~€5 |
-| Breadboard | 1–2 | Prototyping | ~€5 |
-| Jumper Wires (M-M, M-F, F-F) | 1 set | Connections between components | ~€5 |
-| Multiplexer TCA9548A | 2 | Expand servo/actuator control channels | ~€6 (provided by lab) |
-| Vibrotactile Actuators + Drives (TacHammer / Drake Titan) | 16 | Vibration haptic feedback in blanket grid | Provided by lab/thesis |
-| Servos (for belly grid) | Up to 16 | 4×4 grid, already part of thesis hardware | Provided by thesis |
-| Touchscreen display | 1 | Visual game interface for child | ~€30–50 |
-| USB cables / power supply | As needed | Power for Arduinos | ~€5 |
-| **Total (excluding lab-provided items)** | | | **~€70–100** |
-
 ### 📋 Bill of Materials (BOM)
 
 | Component | Quantity | Notes | Estimated Cost |
 | :--- | :--- | :--- | :--- |
-| **ESP-32 (Screen Side)** | 1 | Main microcontroller for game logic, screen, and IMU reading | ~€10–15 |
-| **ESP-32 (Blanket Side)** | 1 | Receiver brain for servos and haptic drivers | ~€10–15 |
+| **ESP-32 Microcontroller (Screen Side)** | 1 | Main microcontroller for game logic, screen, and IMU reading | ~€10–15 |
+| **ESP-32 Microcontroller (Blanket Side)** | 1 | Receiver brain for servos and haptic drivers | ~€10–15 |
 | **MPU6050 Module** | 1 | Accelerometer & Gyroscope for tilt-based screen input | ~€5 |
-| **SPI TFT Display** | 1 | Z400IT002 (or similar) visual game interface for child | ~€30–50 |
-| **Passive Buzzer** | 1–3 | Audio feedback via PWM | ~€3 |
-| **PCA9685 PWM Driver** | 1 | **CRITICAL:** 16-Channel driver for all 16 servos safely via I2C | ~€8–12 |
+| **4.0 inch SPI TFT Display** | 1 | Z400IT002 (or similar) visual game interface for child | ~€30–50 |
+| **KY-006 Passive Piezo Buzzer** | 1 | Audio feedback | ~€3 |
+| **PCA9685 PWM Driver** | 1 | 16-Channel driver for all 16 servos safely via I2C | ~€8–12 |
 | **TCA9548A Multiplexer** | 2 | Expands I2C to control 16 separate DRV2605L drivers | ~€6 |
-| **DRV2605L Motor Drivers** | 16 | Generates specific waveforms for the Drake actuators | ~€60–80 *(Check if lab provides)* |
+| **DRV2605L Motor Drivers** | 16 | Generates specific waveforms for the Drake actuators | ~€60–80 |
 | **Drake Titan Actuators** | 16 | Vibrotactile actuators for haptic feedback in blanket grid | Provided by lab |
-| **Servos** | 16 | Controls the 4×4 physical belly grid (already part of thesis hardware) | Provided by thesis |
+| **MG90S Servo Motors** | 16 | Controls the 4×4 physical belly grid | Provided by thesis |
 | **5V Power Supply** | 1 | High-Current (10A-20A) dedicated power for all servos & haptics | ~€20–30 |
 | **DC Power Adapter** | 1 | Jack to Terminal Adapter to connect wall power to PCA9685/breadboard | ~€2 |
-| **Breadboard** | 2–3 | For rapid prototyping before permanent soldering | ~€6 |
+| **Breadboard** | 2 | For rapid prototyping before permanent soldering | ~€6 |
 | **Jumper Wires** | 1 set | Mix of M-M, M-F, F-F for connections between components | ~€8 |
 | **USB Cables** | 2 | Power/Data for ESP32s and computer programming | ~€5 |
 | **Total** | | *(Excluding lab/thesis-provided items)* | **~€165–230** |
