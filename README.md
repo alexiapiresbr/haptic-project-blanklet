@@ -1,7 +1,7 @@
 # Haptic Technology to Distract Small Children During Medical Procedures
 
 **Course:** B-KUL-T4lMD2 Haptic Interfaces Experience — KU Leuven, Department of Mechanical Engineering  
-**Authors:** Alexia Pires, Thibaut Degreef, Taiki De Wel  
+**Authors:** Alexia Pires, Taiki De Wel, Thibaut Degreef  
 **Supervisor:** Prof. Dr. ir. Carlos Rodriguez-Guerrero  
 **Teaching Assistants:** Marlon Rodriguez, Ewald Ury  
 **Academic Year:** 2025–2026
