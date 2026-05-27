@@ -12,7 +12,7 @@
 
 Pediatric anxiety during medical procedures is common and can make care more difficult for both children and clinicians. Within clinical care frameworks like the 7P PROSA model at UZ Leuven [1], distraction is recognized as one of the most effective non-pharmacological strategies for reducing distress. This project targets children between 3 and 6 years old, an age group for which short attention spans, limited verbal communication, and high procedural fear make non-pharmacological distraction particularly valuable.
 
-This project builds upon an ongoing master's thesis developed by Thibaut Degreef and Stan Vanherle at KU Leuven, focused on a multimodal haptic blanket for pediatric procedural comfort care. The thesis platform already included the weighted blanket, which has been shown to offer calming deep touch pressure that reduces anticipatory anxiety [2], alongside a servo-based pressure grid and vibrotactile actuator hardware. By stimulating specific low-threshold mechanoreceptors in the skin [3], this multimodal haptic approach aims to act as a physiological stress buffer, mimicking the soothing and regulating effects of social touch [4].
+This project builds upon an ongoing master's thesis developed by Thibaut Degreef and Stan Vanherle at KU Leuven [2], focused on a multimodal haptic blanket for pediatric procedural comfort care. The thesis platform already included the weighted blanket, which has been shown to offer calming deep touch pressure that reduces anticipatory anxiety [3], alongside a servo-based pressure grid and vibrotactile actuator hardware. By stimulating specific low-threshold mechanoreceptors in the skin [4], this multimodal haptic approach aims to act as a physiological stress buffer, mimicking the soothing and regulating effects of social touch [5].
 
 The contribution of this course project was the development of an interactive game layer running on a handheld ESP32-based interface. This included:
 
@@ -25,7 +25,6 @@ The contribution of this course project was the development of an interactive ga
 The child controls simple games through tilt and touch, while the system translates game events into synchronized haptic feedback on the blanket. The goal is to create a more engaging and multisensory distraction experience.
 
 ---
-
 
 ## 2. Hardware / Supplies
 
@@ -77,6 +76,9 @@ The system uses two ESP32 boards:
 
 This wireless separation avoids cable strain and keeps the high-current actuator supply isolated from the handheld controller.
 
+![System Architecture Diagram](Images/system_architecture.png)  
+*Figure 1: System architecture showing Master (screen-side) and Slave (blanket-side) ESP32 nodes communicating over ESP-NOW.*
+
 ### 4.2 Input and calibration
 
 The MPU6050 is calibrated at startup using a short static sampling phase. During runtime, accelerometer values are low-pass filtered (α = 0.12–0.15) to reduce jitter while preserving responsive tilt control. The gyroscope is intentionally not used at runtime: because the IMU is mounted upside-down inside the handheld unit, fast movements cause pitch and roll axes to cross-contaminate in the body frame. The accelerometer alone provides stable, drift-free absolute orientation.
@@ -90,6 +92,21 @@ Three games run on the Master ESP32, all designed to be immediately understandab
 | Snake | IMU tilt | Navigate the snake to eat food, avoid walls and obstacles |
 | Brick Breaker | IMU tilt | Move the paddle to bounce the ball and clear bricks |
 | Balloon Pop | Touchscreen | Tap balloons before they float away; avoid bombs |
+
+#### Snake
+
+![Snake Game](Images/game_snake.jpeg)  
+*Figure 2: Snake game running on the TFT display. The child tilts the handheld controller to steer the snake toward the red food item.*
+
+#### Brick Breaker
+
+![Brick Breaker Game](Images/game_brickbreaker.jpeg)  
+*Figure 3: Brick Breaker game on the TFT display. The child tilts the controller to move the paddle and clear the coloured brick grid.*
+
+#### Balloon Pop
+
+![Balloon Pop Game](Images/game_balloonpop.jpeg)  
+*Figure 4: Balloon Pop game on the TFT display. The child taps rising balloons to pop them and must avoid the bomb balloon.*
 
 ### 4.4 Haptic mapping
 
@@ -131,7 +148,6 @@ Master and Slave communicate through ESP-NOW. The game sends compact packets con
 
 ---
 
-
 ## 6. Discussion
 
 The prototype demonstrates that a compact embedded system can combine game control, visual feedback, audio, and spatial haptics into a coherent distraction tool for children aged 3 to 6. All three games are deliberately simple no reading required, no complex rules so that a toddler can engage with them within seconds and a caregiver can hand the device over without explanation. This aligns with clinical best practice for procedural distraction, where a child's full attentional load should be directed at the distractor rather than at learning how to use it.
@@ -152,24 +168,18 @@ This project extends an existing pediatric haptic blanket with an interactive ga
 
 Future improvements include:
 
-- **Formal usability testing with children and clinicians.** Structured play sessions with children aged 3–6, observed by clinicians, would identify which game mechanics are most engaging and which haptic patterns are most comforting.
-- **Higher-fidelity audio.** Replacing the passive buzzer with a small speaker and an I2S DAC would allow polyphonic melodies and richer sound effects.
-- **Differentiated haptic profiles per game event.** In Balloon Pop, golden and bomb balloons could carry distinct haptic signatures. In Snake, obstacle collisions could trigger a different rumble pattern than self-collisions.
-- **Additional game modes.** A rhythm game in which the child taps in time with the melody — and the blanket pulses on the beat — would further exploit the synchronized audio-haptic channel.
-- **Adaptive haptic intensity.** A future version could use a lightweight biofeedback signal (e.g. heart rate) to automatically adjust stimulus intensity based on the child's real-time stress level.
-- **Robust wireless communication.** Migrating to a dedicated frequency band would reduce interference risk in RF-dense hospital environments.
+- Formal usability testing with children and clinicians. Structured play sessions with children aged 3–6, observed by clinicians, would identify which game mechanics are most engaging and which haptic patterns are most comforting.
+- Higher-fidelity audio. Replacing the passive buzzer with a small speaker and an I2S DAC would allow polyphonic melodies and richer sound effects.
+- Additional game modes. A rhythm game in which the child taps in time with the melody and the blanket pulses on the beat would further exploit the synchronized audio-haptic channel.
+- Adaptive haptic intensity. A future version could use a lightweight biofeedback signal (e.g. heart rate) to automatically adjust stimulus intensity based on the child's real-time stress level.
+- Robust wireless communication. Migrating to a dedicated frequency band would reduce interference risk in RF-dense hospital environments.
 
 ---
 
 ## 8. References
 
 [1] UZ Leuven, "Pijn bij kinderen - wat doen we eraan?" (PROSA model). Available: https://www.uzleuven.be/nl/prosa  
-[2] L. I. Stein Duker, R. McGuire, J. Hernandez, E. Goodman, and J. C. Polido, "Feasibility, acceptability, and perceived effectiveness of weighted blankets during paediatric dental care," *International Journal of Paediatric Dentistry*, vol. 35, no. 3, pp. 519–528, 2025.  
-[3] V. E. Abraira and D. D. Ginty, "The Sensory Neurons of Touch," *Neuron*, vol. 79, no. 4, pp. 618–639, 2013.  
-[4] I. Morrison, "Keep Calm and Cuddle on: Social Touch as a Stress Buffer," *Adaptive Human Behavior and Physiology*, vol. 2, no. 4, pp. 344–362, 2016.  
-[5] InvenSense, *MPU-6000 and MPU-6050 Product Specification*, Rev. 3.4, 2013.  
-[6] Espressif Systems, *ESP32 Technical Reference Manual*, v5.1, 2024.  
-[7] Bodmer, TFT_eSPI library for ESP32. Available: https://github.com/Bodmer/TFT_eSPI  
-[8] T. Degreef and S. Vanherle, "A Haptic-Centred Multisensory Distraction Device for Reducing Stress in Minor Medical Procedures," master's thesis, KU Leuven, 2026.
-
----
+[2] T. Degreef and S. Vanherle, "A Haptic-Centred Multisensory Distraction Device for Reducing Stress in Minor Medical Procedures," master's thesis, KU Leuven, 2026.  
+[3] L. I. Stein Duker, R. McGuire, J. Hernandez, E. Goodman, and J. C. Polido, “Feasibility, acceptability, and perceived effectiveness of weighted blankets during paediatric dental care,” International Journal of Paediatric Dentistry, Sep. 2024, doi: https://doi.org/10.1111/ipd.13263.  
+[4] Victoria E. Abraira and David D. Ginty, “The Sensory Neurons of Touch,” Neuron, vol. 79, no. 4, pp. 618–639, Aug. 2013, doi: https://doi.org/10.1016/j.neuron.2013.07.051.  
+[5] I. Morrison, “Keep Calm and Cuddle on: Social Touch as a Stress Buffer,” Adaptive Human Behavior and Physiology, vol. 2, no. 4, pp. 344–362, Aug. 2016, doi: https://doi.org/10.1007/s40750-016-0052-x.  
