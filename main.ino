@@ -6,9 +6,7 @@
 
 TFT_eSPI tft = TFT_eSPI();
 
-// =============================================================
-// PINOUT
-// =============================================================
+// PINOUT:
 // MPU6050 (I2C) — connect to schermside ESP32:
 //   VCC  → 3.3V
 //   GND  → GND
@@ -29,7 +27,6 @@ TFT_eSPI tft = TFT_eSPI();
 //
 //   Touch (XPT2046 via SPI, shared):
 //   T_CS → GPIO 14
-// =============================================================
 
 // MPU6050 settings
 #define MPU_ADDR  0x68
@@ -37,7 +34,7 @@ TFT_eSPI tft = TFT_eSPI();
 #define MPU_SCL   22
 
 
-// === ESP-NOW ===
+// ESP-NOW
 uint8_t mac_servo[] = {0xec, 0xe3, 0x34, 0x99, 0xf9, 0xac};
 #define BOARD_10 10
 
@@ -57,7 +54,7 @@ struct PIDData {
 PIDData lastPIDData    = {0, NAN, 0.0f, 0.0f};
 bool    pidDataReceived = false;
 
-// === STATES ===
+// STATES 
 enum AppState {
   CALIBRATION, MENU,
   GRID_MODE, GRID2_MODE,
@@ -67,7 +64,7 @@ enum AppState {
 };
 AppState currentState = CALIBRATION;
 
-// === COLORS ===
+// COLORS
 #define C_BG      TFT_BLACK
 #define C_SURFACE 0x1082
 #define C_PRIMARY 0x04FF
@@ -82,11 +79,11 @@ AppState currentState = CALIBRATION;
 #define C_GRID2   0x07FF
 #define C_DEPT    0xFFE0
 
-// === LAYOUT ===
+// LAYOUT 
 const int cols=4, rows=4;
 const int MENU_H=36, SIDE_M=20, TOP_M=20, BOX_SIZE=28;
 
-// === BUTTON STRUCT ===
+// BUTTON STRUCT 
 struct Btn { int x,y,w,h; };
 Btn btnGrid,btnTemp,btnGame,btnAai,btnAai2,btnTril;
 Btn btnGrid2,btnDraw,btnDept;
@@ -102,15 +99,15 @@ Btn btnBalloon;
 Btn btnVol;
 Btn btnVolMinus, btnVolPlus;
 
-// === VIBRATION MAP ===
+// VIBRATION MAP 
 const int8_t TRIL_MAP[16] = {
    8, 9, 10, 11, 12, 13, 14, 15, 7, -1, 5, 4, 3, 2, 1, 0,
 };
 
-// === DEPTH SCALE ===
+// DEPTH SCALE
 float depthScale = 1.0f;
 
-// === BUZZER ===
+// BUZZER
 #define BUZZER_PIN     26   // GPIO26 — passive buzzer (change if needed)
 #define BUZZER_CHANNEL  0   // LEDC channel
 
@@ -349,9 +346,8 @@ uint8_t drawShapeType = 255;
 int16_t lastDrawX = -1, lastDrawY = -1;
 unsigned long drawNextAt = 0;
 
-// ============================================================
-// HELPERS
-// ============================================================
+// HELPERS:
+
 bool btnHit(Btn b, int tx, int ty) {
   return tx>=b.x && tx<=b.x+b.w && ty>=b.y && ty<=b.y+b.h;
 }
@@ -398,9 +394,8 @@ void sendHapticStop() {
   esp_now_send(mac_servo,(uint8_t*)&myData,sizeof(myData));
 }
 
-// ============================================================
-// DRAW MODE HELPERS
-// ============================================================
+// DRAW MODE HELPERS:
+ 
 void addWP(int x, int y) {
   if (drawNWP < DRAW_MAX_WP)
     drawWP[drawNWP++] = {(int16_t)x,(int16_t)y,false};
@@ -429,9 +424,8 @@ void drawShapeDots(uint16_t color){
     tft.fillCircle(drawWP[i].x,drawWP[i].y,3,color);
 }
 
-// ============================================================
-// FORWARD DECLARATIONS
-// ============================================================
+// FORWARD DECLARATIONS:
+
 void goToMenu();
 void startGridMode(); void drawGridInterface(); void calculateGradient(int x,int y);
 void startGrid2Mode(); void drawGrid2Interface(); void calculateGrid2(int x,int y);
@@ -462,9 +456,8 @@ void buzzerUpdate();
 void startVolMode(); void drawVolScreen();
 void snakeHapticAt(int gx, int gy);
 
-// ============================================================
-// ESP-NOW CALLBACK
-// ============================================================
+// ESP-NOW CALLBACK:
+
 void OnDataRecv(const esp_now_recv_info_t *info,const uint8_t *data,int len){
   if(len==sizeof(PIDData)){
     memcpy(&lastPIDData,data,sizeof(PIDData));
@@ -473,9 +466,8 @@ void OnDataRecv(const esp_now_recv_info_t *info,const uint8_t *data,int len){
   }
 }
 
-// ============================================================
-// SETUP
-// ============================================================
+// SETUP:
+
 void setup(){
   Serial.begin(115200);
   tft.init(); tft.setRotation(1); tft.fillScreen(C_BG);
@@ -520,9 +512,8 @@ void setup(){
   goToMenu();
 }
 
-// ============================================================
-// LOOP
-// ============================================================
+// LOOP:
+
 void loop(){
   buzzerUpdate();
   if(currentState==STROKE_MODE)  strokeLoop();
@@ -736,9 +727,9 @@ void loop(){
   }
 }
 
-// ============================================================
-// DEPT MODE
-// ============================================================
+
+// DEPT MODE:
+
 void drawDeptScreen(){
   int W=tft.width();
   tft.fillRect(0,38,W,tft.height()-38-MENU_H,C_BG);
@@ -774,9 +765,8 @@ void startDeptMode(){
   drawMenuBar("HOLD 2 SEC FOR MENU");
 }
 
-// ============================================================
-// STROKE LOOPS
-// ============================================================
+// STROKE LOOPS:
+
 void strokeLoop(){
   if(millis()-lastStrokeTime<STROKE_INTERVAL_MS) return;
   lastStrokeTime=millis();
@@ -807,9 +797,9 @@ void aai2Loop(){
   sendToServo(3,0);
 }
 
-// ============================================================
-// TEMP SCREEN
-// ============================================================
+
+// TEMP SCREEN:
+
 void drawTempStatic(){
   int W=tft.width(), cy_sp=90;
   tft.setTextColor(C_SUBTEXT,C_BG);
@@ -863,9 +853,8 @@ void startTempMode(){
   sendToServo(1,currentTemp);
 }
 
-// ============================================================
-// MENU
-// ============================================================
+// MENU:
+
 void goToMenu(){
   buzzerStop();
   currentState=MENU; tft.fillScreen(C_BG);
@@ -926,9 +915,8 @@ void goToMenu(){
   tft.drawCentreString("Volume",      btnVol.x+bw5/2,     r5y+bh+2, 1);
 }
 
-// ============================================================
-// GRID (servo)
-// ============================================================
+// GRID (servo):
+
 void drawGridInterface(){
   tft.fillScreen(C_BG); drawTitle("GRID CONTROL");
   for(int r=0;r<rows;r++) for(int c=0;c<cols;c++){
@@ -963,9 +951,8 @@ void calculateGradient(int touchX,int touchY){
   sendToServo(0,0);
 }
 
-// ============================================================
-// GRID2 (haptic)
-// ============================================================
+// GRID2 (haptic):
+
 void drawGrid2Interface(){
   tft.fillScreen(C_BG); drawTitle("HAPTIC GRID");
   for(int r=0;r<rows;r++) for(int c=0;c<cols;c++){
@@ -994,9 +981,9 @@ void calculateGrid2(int touchX,int touchY){
   sendToServo(5,0);
 }
 
-// ============================================================
-// AAI / AAI2
-// ============================================================
+
+// AAI / AAI2:
+
 void startStrokeMode(){
   currentState=STROKE_MODE; strokeY=0.0f; lastStrokeTime=millis();
   tft.fillScreen(C_BG); drawTitle("STROKE - WAVE MOTION");
@@ -1021,9 +1008,8 @@ void startAai2Mode(){
   drawMenuBar("HOLD 2 SEC FOR MENU");
 }
 
-// ============================================================
-// VIBE
-// ============================================================
+// VIBE:
+
 void drawVibeMenu(){
   tft.fillRect(0,42,tft.width(),tft.height()-42-MENU_H,C_BG);
   tft.setTextColor(C_SUBTEXT,C_BG);
@@ -1046,9 +1032,8 @@ void startVibeMode(){
   drawVibeMenu(); drawMenuBar("HOLD 2 SEC FOR MENU");
 }
 
-// ============================================================
-// GAME
-// ============================================================
+// GAME:
+
 void startGameMode(){
   currentState=GAME_MODE; gameScore=0; gameSpeed=1500;
   currentMole=-1; moleIsUp=false; lastMoleTime=millis();
@@ -1062,9 +1047,9 @@ void startGameMode(){
   drawMenuBar("HOLD 2 SEC FOR MENU");
 }
 
-// ============================================================
-// DRAW MODE
-// ============================================================
+
+// DRAW MODE:
+
 void genDrawShape(uint8_t type){
   drawNWP=0; drawVisited=0;
   int W=tft.width(), H=tft.height();
@@ -1135,9 +1120,9 @@ void startDrawMode(){
   nextDrawShape();
 }
 
-// ============================================================
-// BACK BUTTON
-// ============================================================
+
+// BACK BUTTON:
+
 bool checkBackButton(int tx,int ty){
   if(ty>(uint16_t)(tft.height()-MENU_H)){
     backReleasedAt=0;  // finger confirmed still on bar
@@ -1159,9 +1144,8 @@ bool checkBackButton(int tx,int ty){
   return false;
 }
 
-// ============================================================
-// GAME LOGIC
-// ============================================================
+// GAME LOGIC:
+
 void gameLoop(){if(millis()-lastMoleTime>gameSpeed) spawnMole();}
 void spawnMole(){
   if(currentMole!=-1){
@@ -1181,9 +1165,8 @@ void spawnMole(){
   lastMoleTime=millis(); moleIsUp=true;
 }
 
-// ============================================================
-// DRAW HAPTIC
-// ============================================================
+// DRAW HAPTIC:
+
 void sendDrawHaptic(int touchX, int touchY){
   // Draw mode has no title bar — use full width/height
   // Divide screen into 4x4 grid over the full drawing area
@@ -1206,9 +1189,8 @@ void sendDrawHaptic(int touchX, int touchY){
 }
 
 
-// ============================================================
-// MPU6050 RAW READ
-// ============================================================
+// MPU6050 RAW READ:
+
 void readMPU6050raw(int16_t &ax, int16_t &ay, int16_t &az,
                     int16_t &gx, int16_t &gy, int16_t &gz) {
   Wire.beginTransmission(MPU_ADDR);
@@ -1226,9 +1208,9 @@ void readMPU6050raw(int16_t &ax, int16_t &ay, int16_t &az,
 
 void initMPU6050() {} // already done in setup()
 
-// ============================================================
-// GRAV LOOP — accel-only low-pass filter (gyro removed)
-// ============================================================
+
+// GRAV LOOP — accel-only low-pass filter (gyro removed):
+
 void gravLoop() {
   if (isHoldingBack) return;
   if (!mpuOK) return;
@@ -1307,9 +1289,9 @@ void gravLoop() {
   drawGravDisplay(lowX, lowY, pitch, roll);
 }
 
-// ============================================================
-// GRAV VISUAL DISPLAY
-// ============================================================
+
+// GRAV VISUAL DISPLAY:
+
 void drawGravDisplay(float lowX, float lowY, float pitch, float roll) {
   int W = tft.width(), H = tft.height() - MENU_H;
 
@@ -1381,9 +1363,8 @@ void startGravMode() {
 }
 
 
-// ============================================================
-// SNAKE HAPTIC HELPER
-// ============================================================
+// SNAKE HAPTIC HELPER:
+
 void snakeHapticAt(int gx, int gy) {
   float sx = snakeOffX + gx * SNAKE_CELL + SNAKE_CELL / 2.0f;
   float sy = snakeOffY + gy * SNAKE_CELL + SNAKE_CELL / 2.0f;
@@ -1397,9 +1378,8 @@ void snakeHapticAt(int gx, int gy) {
   esp_now_send(mac_servo,(uint8_t*)&myData,sizeof(myData));
 }
 
-// ============================================================
-// BUZZER
-// ============================================================
+// BUZZER:
+
 void buzzerStart(const BuzzerNote* melody, int len, bool loop) {
   buzzerMelody  = melody;
   buzzerLen     = len;
@@ -1432,9 +1412,8 @@ void buzzerUpdate() {
   }
 }
 
-// ============================================================
-// SNAKE GAME FUNCTIONS
-// ============================================================
+// SNAKE GAME FUNCTIONS:
+
 
 void snakeDrawCell(int gx, int gy, uint16_t color) {
   tft.fillRect(snakeOffX + gx*SNAKE_CELL + 1,
@@ -1692,10 +1671,8 @@ void startSnakeMode() {
   buzzerStart(MELODY_SNAKE, MELODY_SNAKE_LEN, true);
 }
 
+// SNAKE OBSTACLE FUNCTIONS:
 
-// ============================================================
-// SNAKE OBSTACLE FUNCTIONS
-// ============================================================
 
 bool snakeIsObs(int x, int y) {
   for (int i = 0; i < snakeObsCount; i++) {
@@ -1777,9 +1754,8 @@ void snakeSpawnObstacle() {
 
 
 
-// ============================================================
-// BALLOON POP GAME FUNCTIONS
-// ============================================================
+// BALLOON POP GAME FUNCTIONS:
+
 
 void balDrawScore() {
   int W = tft.width();
@@ -2011,9 +1987,8 @@ void startBalloonMode() {
   buzzerStart(MELODY_BALLOON, MELODY_BALLOON_LEN, true);
 }
 
-// ============================================================
-// BRICK BREAKER FUNCTIONS
-// ============================================================
+// BRICK BREAKER FUNCTIONS:
+
 
 void brickDrawPlatform(uint16_t color) {
   tft.fillRect((int)brickPlatX, brickPlatY, BRICK_PLAT_W, BRICK_PLAT_H, color);
@@ -2271,9 +2246,9 @@ void startBrickMode() {
   buzzerStart(MELODY_TETRIS, MELODY_TETRIS_LEN, true);
 }
 
-// ============================================================
-// VOLUME CONTROL
-// ============================================================
+
+// VOLUME CONTROL:
+
 void drawVolScreen() {
   int W = tft.width();
   tft.fillRect(0, 38, W, tft.height()-38-MENU_H, C_BG);
@@ -2310,9 +2285,8 @@ void startVolMode() {
   drawMenuBar("HOLD 2 SEC FOR MENU");
 }
 
-// ============================================================
-// SEND — depthScale applied for servo modes
-// ============================================================
+// SEND — depthScale applied for servo modes:
+
 void sendToServo(int mode, float temp){
   myData.id=BOARD_10; myData.mode=mode; myData.tempVal=temp;
   if(mode==0 || mode==2 || mode==3){
