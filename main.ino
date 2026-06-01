@@ -180,8 +180,10 @@ bool              buzzerDoLoop  = true;
 
 
 // === MPU6050 / GRAVITY ===
-float filtAx  = 0.0f;   // low-pass filtered X-axis acceleration
-float filtAy  = 0.0f;   // low-pass filtered Y-axis acceleration
+float filtAx      = 0.0f;   // low-pass filtered X-axis acceleration
+float filtAy      = 0.0f;   // low-pass filtered Y-axis acceleration
+float snakeBaseAx = 0.0f;   // neutral tilt offset X (calibrated at snake start)
+float snakeBaseAy = 0.0f;   // neutral tilt offset Y (calibrated at snake start)
 float gravPitch = 0.0f; // no longer used (accel-only)
 float gravRoll  = 0.0f; // no longer used (accel-only)
 unsigned long gravLastTime   = 0;
@@ -1477,9 +1479,9 @@ void snakeUpdateDir() {
   filtAy += (ay - filtAy) * LP;
 
   // Axis direction calibrated to IMU mounting
-  // filtAx positive = tilt right (after measurement: sign was reversed, corrected)
-  float tiltX =  filtAx;  // positive = tilt right (corrected)
-  float tiltY =  filtAy;  // positive = tilt forward/down
+  // Tilt relatief aan gekalibreerde neutrale positie
+  float tiltX = filtAx - snakeBaseAx;  // positief = tilt rechts t.o.v. neutrale houding
+  float tiltY = filtAy - snakeBaseAy;  // positief = tilt vooruit t.o.v. neutrale houding
 
   SnakeDir newDir = snakeDir;
   if (fabsf(tiltX) > fabsf(tiltY)) {
@@ -1632,11 +1634,63 @@ void snakeLoop() {
 
 void startSnakeMode() {
   currentState = SNAKE_MODE;
+
+  // ---- Kalibratie scherm ----
+  // Toon boodschap 3 seconden, meet intussen neutrale IMU positie
+  tft.fillScreen(C_BG);
+  int W = tft.width(), H = tft.height() - MENU_H;
+  tft.setTextColor(C_TEXT, C_BG);
+  tft.drawCentreString("SNAKE", W/2, H/2 - 52, 4);
+  tft.setTextColor(C_SUBTEXT, C_BG);
+  tft.drawCentreString("Keep still in", W/2, H/2 - 14, 2);
+  tft.drawCentreString("comfortable position", W/2, H/2 + 10, 2);
+  drawMenuBar("HOLD 2 SEC FOR MENU");
+
+  // Voortgangsbalk onderaan het tekstblok
+  int barX = W/4, barY = H/2 + 38, barW = W/2, barH = 8;
+  tft.drawRoundRect(barX, barY, barW, barH, 4, C_SURFACE);
+
+  // Meet neutrale positie gedurende 3 seconden
+  float sumAx = 0.0f, sumAy = 0.0f;
+  int   samples = 0;
+  filtAx = 0.0f; filtAy = 0.0f;
+  unsigned long calStart = millis();
+  const unsigned long CAL_MS = 3000;
+
+  while (millis() - calStart < CAL_MS) {
+    int16_t rawAx,rawAy,rawAz,rawGx,rawGy,rawGz;
+    readMPU6050raw(rawAx,rawAy,rawAz,rawGx,rawGy,rawGz);
+    float ax = rawAx / 16384.0f;
+    float ay = rawAy / 16384.0f;
+    float az = rawAz / 16384.0f;
+    const float LP = 0.15f;
+    filtAx += (ax - filtAx) * LP;
+    filtAy += (ay - filtAy) * LP;
+    sumAx += filtAx;
+    sumAy += filtAy;
+    samples++;
+
+    // Update voortgangsbalk
+    unsigned long elapsed = millis() - calStart;
+    int filled = (int)((float)elapsed / CAL_MS * barW);
+    if (filled > 0)
+      tft.fillRoundRect(barX, barY, filled, barH, 4, C_PRIMARY);
+
+    delay(20);
+  }
+
+  // Sla neutrale positie op als offset
+  if (samples > 0) {
+    snakeBaseAx = sumAx / samples;
+    snakeBaseAy = sumAy / samples;
+  }
+
+  // ---- Spel opbouwen ----
   tft.fillScreen(C_BG);
   drawMenuBar("HOLD 2 SEC FOR MENU");
 
   snakeOffX = (tft.width() - SNAKE_COLS * SNAKE_CELL) / 2;
-  snakeOffY = 18;  // fixed offset: space for score text at top
+  snakeOffY = 18;
 
   // Border
   tft.drawRect(snakeOffX-1, snakeOffY-1,
@@ -1649,7 +1703,6 @@ void startSnakeMode() {
   snakeDead      = false;
   snakeCurSpeed  = SNAKE_SPEED_MS;
   snakeLastMove  = millis();
-  filtAx = 0.0f; filtAy = 0.0f;
   snakeDirQueue[0] = SDIR_RIGHT;
   snakeDirQueue[1] = SDIR_RIGHT;
   snakeDirQueueLen = 0;
